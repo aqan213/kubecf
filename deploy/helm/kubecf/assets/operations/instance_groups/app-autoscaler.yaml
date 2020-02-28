@@ -158,7 +158,7 @@
             sslmode: verify-full
             tls:
               ca: ((postgres_ca.certificate))
-            {{- else}}
+            {{- else }}
             db_scheme: mysql
             port: 3306
             roles:
