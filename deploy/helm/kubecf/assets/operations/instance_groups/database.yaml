@@ -476,7 +476,21 @@
               ca_certificate: "((pxc_server_ca.certificate))"
               server_certificate: "((mysql_server_certificate.certificate))"
               server_key: "((mysql_server_certificate.private_key))"
-
+{{- if .Values.features.autoscaler.enabled -}}
+{{- if .Values.features.autoscaler.mysql.enabled -}}
+- type: replace
+  path: /instance_groups/name=database/jobs/name=mysql/properties/cf_mysql/mysql/seeded_databases/-
+  value:
+    name: autoscaler
+    username: autoscaler
+    password: "((autoscaler_mysql_database_password))"
+- type: replace
+  path: /variables/-
+  value:
+    name: autoscaler_mysql_database_password
+    type: password
+{{- end }}
+{{- end }}
 # Add quarks properties. It adds the BPM configuration as cf-mysql-release lacks
 # support for it upstream.
 - type: replace

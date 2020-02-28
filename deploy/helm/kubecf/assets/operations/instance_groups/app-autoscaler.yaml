@@ -93,6 +93,7 @@
       query: '*'
 
 # Add autoscaler instance groups.
+{{- if not .Values.features.autoscaler.mysql.enabled -}}
 - type: replace
   path: /instance_groups/0:before
   value:
@@ -124,6 +125,7 @@
           - name: postgres
             password: "((autoscaler_database_password))"
             tag: default
+{{- end }}
 - type: replace
   path: /instance_groups/-
   value:
@@ -146,6 +148,7 @@
             databases:
             - name: autoscaler
               tag: default
+            {{- if not .Values.features.autoscaler.mysql.enabled -}}
             db_scheme: postgres
             port: 5432
             roles:
@@ -155,6 +158,17 @@
             sslmode: verify-full
             tls:
               ca: ((postgres_ca.certificate))
+            {{- else}}
+            db_scheme: mysql
+            port: 3306
+            roles:
+            - name: autoscaler
+              password: ((autoscaler_mysql_database_password))
+              tag: default
+            sslmode: false
+            tls:
+              ca: ((pxc_server_ca.certificate))
+            {{- end }}
           scheduler_db: *database
           policy_db: *database
           scalingengine_db_connection_config: &databaseConnectionConfig
@@ -962,6 +976,7 @@
               - --fail
               - --head
               - http://127.0.0.1:6403
+{{- if not .Values.features.autoscaler.mysql.enabled -}}
 - type: replace
   path: /instance_groups/name=asdatabase/jobs/name=postgres/properties/quarks?
   value:
@@ -989,7 +1004,7 @@
         - -c
         - |-
           {{- .Files.Get "assets/scripts/jobs/postgres/bpm_process.sh" | nindent 10 }}
-
+{{- end }}
 # TODO: set these skip_ssl_validation to false if the cf API (api.((system_domain))) public cert is provided by the user.
 - type: replace
   path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/cf/skip_ssl_validation?
@@ -1000,10 +1015,11 @@
 - type: replace
   path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/cf/skip_ssl_validation?
   value: true
-
+{{- if not .Values.features.autoscaler.mysql.enabled -}}
 {{- $root := . -}}
 {{- range $path, $bytes := .Files.Glob "assets/operations/pre_render_scripts/asdatabase_*" }}
 {{ $root.Files.Get $path }}
+{{- end }}
 {{- end }}
 
 {{- end }}
