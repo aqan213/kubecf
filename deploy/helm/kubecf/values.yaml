@@ -47,7 +47,11 @@ releases:
       os: SLE_15_SP1
       version: 23.21-7.0.0_374.gb8e8e6af
   app-autoscaler:
-    version: 3.0.0
+    url: docker.io/aqan
+    version: 3.0.1
+    stemcell:
+      os: opensuse-42.3-38.g82067a9
+      version: 30.95-7.0.0_346.ge9dd9ff3
   bits-service:
     version: 2.28.0
   brain-tests:
@@ -260,6 +264,8 @@ features:
     enabled: true
   autoscaler:
     enabled: false
+    mysql: 
+      enabled: false
   credhub:
     enabled: true
   # Disabling routing_api will also disable the tcp_router instance_group
@@ -321,6 +327,10 @@ features:
         username: ~
       credhub:
         name: credhub
+        password: ~
+        username: ~
+      autoscaler:
+        name: autoscaler
         password: ~
         username: ~
 
@@ -531,3 +541,4 @@ eirinix:
       kube_storage_class: "default"
       free: true
       default_size: "1Gi"
+
