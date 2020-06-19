@@ -37,6 +37,7 @@ databases=(
   "uaa"
   "locket"
   "credhub"
+  "autoscaler"
 )
 
 if ! "{KUBECTL}" get namespace "${namespace}" 1> /dev/null 2> /dev/null; then
