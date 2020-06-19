@@ -225,6 +225,13 @@
   path: /variables/name=credhub_database_password
 {{- end }}
 
+{{- if .Values.features.autoscaler.enabled }}
+- type: remove
+  path: /instance_groups/name=asdatabase
+- type: remove
+  path: /variables/name=autoscaler_database_password
+{{- end }}
+
 # Replace database config for the jobs.
 - type: replace
   path: /instance_groups/name=uaa/jobs/name=uaa/properties/uaadb/db_scheme
@@ -569,6 +576,603 @@
 - type: replace
   path: /instance_groups/name=credhub/jobs/name=credhub/properties/credhub/data_storage/require_tls?
   value: {{ .Values.features.external_database.require_ssl }}
+{{- end }}
+
+{{- if .Values.features.autoscaler.enabled }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scalingengine_db/address?
+  value: &external-autoscaler-address {{ .Values.features.external_database.host | quote }}
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scalingengine_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scalingengine_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scalingengine_db/db_scheme?
+  value: &external-autoscaler-scheme {{ .Values.features.external_database.type | quote }}
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scalingengine_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scalingengine_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scalingengine_db/port
+  value: &external-autoscaler-port {{ .Values.features.external_database.port }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scalingengine_db/roles/tag=default/name
+  value: &external-autoscaler-username {{ .Values.features.external_database.databases.autoscaler.username | quote }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scalingengine_db/roles/tag=default/password
+  value: &external-autoscaler-password {{ .Values.features.external_database.databases.autoscaler.password | quote }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scheduler_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scheduler_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scheduler_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scheduler_db/db_scheme?
+  value: *external-autoscaler-scheme
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scheduler_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scheduler_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scheduler_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scheduler_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/scheduler_db/roles/tag=default/password
+  value: *external-autoscaler-password 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/policy_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/policy_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/policy_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/policy_db/db_scheme?
+  value: *external-autoscaler-scheme
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/policy_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/policy_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scalingengine/properties/autoscaler/policy_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/policy_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/policy_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/policy_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/policy_db/db_scheme?
+  value: *external-autoscaler-scheme
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/policy_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/policy_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/policy_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/scheduler_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/scheduler_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/scheduler_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/scheduler_db/db_scheme?
+  value: *external-autoscaler-scheme
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/scheduler_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/scheduler_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }} 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/scheduler_db/port
+  value: *external-autoscaler-port 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/scheduler_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=scheduler/properties/autoscaler/scheduler_db/roles/tag=default/password
+  value: *external-autoscaler-password 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/policy_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/policy_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/policy_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/policy_db/db_scheme?
+  value: *external-autoscaler-scheme
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }} 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/policy_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/policy_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/policy_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/appmetrics_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/appmetrics_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/appmetrics_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/appmetrics_db/db_scheme?
+  value: *external-autoscaler-scheme
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/appmetrics_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/appmetrics_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }}  
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/appmetrics_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/appmetrics_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/appmetrics_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/instancemetrics_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/instancemetrics_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/instancemetrics_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/instancemetrics_db/db_scheme?
+  value: *external-autoscaler-scheme
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/instancemetrics_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/instancemetrics_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }}   
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/instancemetrics_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/instancemetrics_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/instancemetrics_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/scalingengine_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/scalingengine_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/scalingengine_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/scalingengine_db/db_scheme?
+  value: *external-autoscaler-scheme
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/scalingengine_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/scalingengine_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }}    
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/scalingengine_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/scalingengine_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/scalingengine_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/lock_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/lock_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/lock_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/lock_db/db_scheme?
+  value: *external-autoscaler-scheme
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/lock_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/lock_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }}   
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/lock_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/lock_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asactors/jobs/name=operator/properties/autoscaler/lock_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/instancemetrics_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/instancemetrics_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/instancemetrics_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/instancemetrics_db/db_scheme?
+  value: *external-autoscaler-scheme
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/instancemetrics_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/instancemetrics_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }}  
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/instancemetrics_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/instancemetrics_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/instancemetrics_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/policy_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/policy_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/policy_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/policy_db/db_scheme?
+  value: *external-autoscaler-scheme
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }}   
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/policy_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/policy_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=metricsserver/properties/autoscaler/policy_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/policy_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/policy_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/policy_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/policy_db/db_scheme?
+  value: *external-autoscaler-scheme 
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }} 
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/policy_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/policy_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/policy_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/appmetrics_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/appmetrics_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/appmetrics_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/appmetrics_db/db_scheme?
+  value: *external-autoscaler-scheme 
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/appmetrics_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/appmetrics_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }} 
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/appmetrics_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/appmetrics_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asmetrics/jobs/name=eventgenerator/properties/autoscaler/appmetrics_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asnozzle/jobs/name=metricsgateway/properties/autoscaler/policy_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asnozzle/jobs/name=metricsgateway/properties/autoscaler/policy_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asnozzle/jobs/name=metricsgateway/properties/autoscaler/policy_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asnozzle/jobs/name=metricsgateway/properties/autoscaler/policy_db/db_scheme?
+  value: *external-autoscaler-scheme 
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asnozzle/jobs/name=metricsgateway/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asnozzle/jobs/name=metricsgateway/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }} 
+- type: replace
+  path: /instance_groups/name=asnozzle/jobs/name=metricsgateway/properties/autoscaler/policy_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asnozzle/jobs/name=metricsgateway/properties/autoscaler/policy_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asnozzle/jobs/name=metricsgateway/properties/autoscaler/policy_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/policy_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/policy_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/policy_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/policy_db/db_scheme?
+  value: *external-autoscaler-scheme 
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }} 
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/policy_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/policy_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/policy_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/binding_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/binding_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/binding_db/tls/ca?
+{{- end }} 
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/binding_db/db_scheme?
+  value: *external-autoscaler-scheme
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/binding_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/binding_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }} 
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/binding_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/binding_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=golangapiserver/properties/autoscaler/binding_db/roles/tag=default/password
+  value: *external-autoscaler-password
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=metricsforwarder/properties/autoscaler/policy_db/address?
+  value: *external-autoscaler-address
+{{ if .Values.features.external_database.ca_cert -}}
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=metricsforwarder/properties/autoscaler/policy_db/tls/ca?
+  value: |
+    {{- toYaml .Values.features.external_database.ca_cert | nindent 4 }}
+{{- else }}
+- type: remove
+  path: /instance_groups/name=asapi/jobs/name=metricsforwarder/properties/autoscaler/policy_db/tls/ca?
+{{- end }}
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=metricsforwarder/properties/autoscaler/policy_db/db_scheme?
+  value: *external-autoscaler-scheme 
+{{ if eq .Values.features.external_database.type  "postgres"   }}
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=metricsforwarder/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}disable{{ else }}verify-full{{ end }}
+{{- else }}
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=metricsforwarder/properties/autoscaler/policy_db/sslmode?
+  value: {{ if not .Values.features.external_database.require_ssl }}false{{ else }}verify-ca{{ end }}
+{{- end }} 
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=metricsforwarder/properties/autoscaler/policy_db/port
+  value: *external-autoscaler-port
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=metricsforwarder/properties/autoscaler/policy_db/roles/tag=default/name
+  value: *external-autoscaler-username 
+- type: replace
+  path: /instance_groups/name=asapi/jobs/name=metricsforwarder/properties/autoscaler/policy_db/roles/tag=default/password
+  value: *external-autoscaler-password
 {{- end }}
 
 {{- end }}

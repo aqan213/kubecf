@@ -239,6 +239,13 @@ settings:
 
 
 features:
+  control_plane:
+    enabled: true
+    workers:
+    - name: c2-diego-cell-0
+      address: 172.30.226.121
+  cluster_worker:
+    enabled: false  
   eirini:
     enabled: false
     registry:

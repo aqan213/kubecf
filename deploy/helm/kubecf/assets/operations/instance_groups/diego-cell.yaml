@@ -1,3 +1,9 @@
+{{- if .Values.features.control_plane.enabled }}
+# To deploy the control plane
+- type: remove
+  path: /instance_groups/name=diego-cell
+{{- else }}
+
 {{- if not .Values.features.eirini.enabled }}
 
 {{- if .Values.features.suse_buildpacks.enabled }}
@@ -232,6 +238,7 @@
 {{- range $path, $bytes := .Files.Glob "assets/operations/pre_render_scripts/diego-cell_*" }}
 {{- if not (regexMatch "diego-cell_sle15-rootfs-setup" $path) }}
 {{ $bytes | toString }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
